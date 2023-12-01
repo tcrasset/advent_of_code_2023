@@ -41,6 +41,21 @@ fn get_computed_sum(input: String) -> i32 {
     return total_sum;
 }
 fn get_replaced_spelled_out_digits(input: String) -> String {
+    // This replaces every occurrence of a spelled out digit into
+    // the number, wrapped with the spelled out version on both sides
+    //
+    // Example: "one" --> "one1one"
+    //
+    // A standard "one" --> "1" replace does not work,
+    // as two spelled-out digits can overlap, "twoone"
+    // The naive strategy would fail in the example "3twoone".
+    // After naive replacement, it would yield "32ne" --> 32
+    // but we need 31 because "one" is the last digit.
+    //
+    // The chosen strategy keeps the overlaps, but inserting the
+    // digit in the middle will make sure that the last digit at
+    // the end is the correct one.
+    // "3twoone" --> "3two2twone1one" --> 31
     let name_to_int = HashMap::from([
         ("one", "1"),
         ("two", "2"),
