@@ -3,7 +3,7 @@ use std::{cmp::max, collections::HashSet, fs};
 use regex::Regex;
 
 pub fn solve(input_file: String) {
-    println!("### Solving Day 2 puzzle...###");
+    println!("### Solving Day 2  puzzle...###");
 
     let input = fs::read_to_string(input_file).unwrap();
 
@@ -121,7 +121,7 @@ fn get_configuration(set_inputs: Vec<&str>) -> Configuration {
     let mut nb_blues = 0;
 
     for input in set_inputs {
-        let (full, [number, color]) = nb_color_regex.captures(input).unwrap().extract();
+        let (_, [number, color]) = nb_color_regex.captures(input).unwrap().extract();
 
         match color {
             "red" => nb_reds += number.parse::<i32>().unwrap(),
