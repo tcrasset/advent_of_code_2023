@@ -5,15 +5,14 @@ pub fn solve(input_file: String) {
 
     let input = fs::read_to_string(input_file).unwrap();
 
-    let output_part_1 = part_1(&input);
+    let output_part_1 = _solve(&input, &compare_hands_part_1);
+    println!("Part 1 Result: {output_part_1}");
 
-    println!("Part 1 Result: {output_part_1}\n");
-    let output_part_2: i64 = part_2(&input);
-
+    let output_part_2: i64 = _solve(&input, &compare_hands_part_2);
     println!("\nPart 2 Result: {output_part_2}");
 }
 
-fn part_1(input: &String) -> i64 {
+fn _solve(input: &String, compare_fn: &dyn Fn(&str, &str) -> i8) -> i64 {
     let hands = input
         .lines()
         .map(|line| line.split(" ").nth(0).unwrap())
@@ -26,11 +25,11 @@ fn part_1(input: &String) -> i64 {
 
     // We are going to sort the hands by their rank, from weakest (rank 1) to strongest (rank N)
     let compare_ordering = |hand_1: &str, hand_2: &str| -> Ordering {
-        match compare_hands_part_1(hand_1, hand_2) {
+        match compare_fn(hand_1, hand_2) {
             -1 => Ordering::Greater,
             0 => Ordering::Equal,
             1 => Ordering::Less,
-            _ => !panic!(),
+            _ => panic!(),
         }
     };
 
@@ -40,9 +39,9 @@ fn part_1(input: &String) -> i64 {
     let mut sorted_hands = hands.to_owned();
     sorted_hands.sort_by(|hand_1, hand_2| compare_ordering(hand_1, hand_2));
 
-    for (h, h_sort) in zip(hands, &sorted_hands) {
-        println!("{:?}, {:?}", h, h_sort);
-    }
+    // for (h, h_sort) in zip(hands, &sorted_hands) {
+    //     println!("{:?}, {:?}", h, h_sort);
+    // }
 
     let mut total_winnings = 0 as i64;
 
@@ -50,56 +49,13 @@ fn part_1(input: &String) -> i64 {
         let bid = hands_to_bids.get(hand).unwrap();
         let rank = index + 1;
         let amount_won = (rank as i32 * bid) as i64;
-        println!("Total winning of {hand} is {amount_won} ({rank} * {bid})");
+        // println!("Total winning of {hand} is {amount_won} ({rank} * {bid})");
         total_winnings += amount_won;
     }
 
     return total_winnings;
 }
 
-fn part_2(input: &String) -> i64 {
-    let hands = input
-        .lines()
-        .map(|line| line.split(" ").nth(0).unwrap())
-        .collect::<Vec<&str>>();
-    let bids = input
-        .lines()
-        .map(|line| line.split(" ").nth(1).unwrap())
-        .map(|bid| bid.parse::<i32>().unwrap())
-        .collect::<Vec<i32>>();
-
-    // We are going to sort the hands by their rank, from weakest (rank 1) to strongest (rank N)
-    let compare_ordering = |hand_1: &str, hand_2: &str| -> Ordering {
-        match compare_hands_part_2(hand_1, hand_2) {
-            -1 => Ordering::Greater,
-            0 => Ordering::Equal,
-            1 => Ordering::Less,
-            _ => !panic!(),
-        }
-    };
-
-    let hands_to_bids: HashMap<&str, i32> =
-        hands.iter().cloned().zip(bids.iter().cloned()).collect();
-
-    let mut sorted_hands = hands.to_owned();
-    sorted_hands.sort_by(|hand_1, hand_2| compare_ordering(hand_1, hand_2));
-
-    for (h, h_sort) in zip(hands, &sorted_hands) {
-        println!("{:?}, {:?}", h, h_sort);
-    }
-
-    let mut total_winnings = 0 as i64;
-
-    for (index, hand) in sorted_hands.iter().enumerate() {
-        let bid = hands_to_bids.get(hand).unwrap();
-        let rank = index + 1;
-        let amount_won = (rank as i32 * bid) as i64;
-        println!("Total winning of {hand} is {amount_won} ({rank} * {bid})");
-        total_winnings += amount_won;
-    }
-
-    return total_winnings;
-}
 
 #[derive(PartialEq, PartialOrd, Debug)]
 // When derived on enums, variants are ordered by their discriminants.
@@ -142,15 +98,15 @@ fn compare_hands_part_1(hand_1: &str, hand_2: &str) -> i8 {
         }
 
         // We should not reach here, no cards should be identical.
-        !panic!()
+        panic!()
     }
 }
 
 fn compare_hands_part_2(hand_1: &str, hand_2: &str) -> i8 {
     // Returns -1 if hand_1 is stronger, 0 if equal, 1 if card_2 is stronger
 
-    let (upgraded_hand_1_type, upgraded_hand_1) = try_get_best_hand_type(hand_1);
-    let (upgraded_hand_2_type, upgraded_hand_2) = try_get_best_hand_type(hand_2);
+    let upgraded_hand_1_type = try_get_best_hand_type(hand_1);
+    let upgraded_hand_2_type = try_get_best_hand_type(hand_2);
 
     let type_comparison = compare_types(&upgraded_hand_1_type, &upgraded_hand_2_type);
 
@@ -160,10 +116,6 @@ fn compare_hands_part_2(hand_1: &str, hand_2: &str) -> i8 {
         // as the current function.
         return type_comparison;
     } else {
-        println!(
-            "{hand_1}, {hand_2} --> {upgraded_hand_1}, {upgraded_hand_2} [{:?}, {:?}]",
-            upgraded_hand_1_type, upgraded_hand_2_type
-        );
         //  However,
         // for the purpose of breaking ties between two hands of the same type,
         // J is always treated as J, not the card it's pretending to be:
@@ -179,7 +131,7 @@ fn compare_hands_part_2(hand_1: &str, hand_2: &str) -> i8 {
         }
 
         // We should not reach here, no cards should be identical.
-        !panic!()
+        panic!()
     }
 }
 
@@ -195,13 +147,12 @@ fn _find_keys_for_value<'a>(map: &'a HashMap<char, i8>, value: i8) -> Vec<char> 
         .collect()
 }
 
-fn try_get_best_hand_type(hand: &str) -> (HandType, String) {
-    // Returns the next best HandType, and the corresponding next best hand.
+fn try_get_best_hand_type(hand: &str) -> HandType {
     let current_type = get_hand_type(hand);
     if hand.chars().position(|card| card == 'J').is_none() {
         // There is no joker in the hand, we just return the standard
         // type.
-        return (current_type, hand.to_owned());
+        return current_type;
     } else {
         // We replace the joker 'J' with the card that will upgrade the type.
         // We thus have to find the highest card in the hand and upgrade the
@@ -209,104 +160,27 @@ fn try_get_best_hand_type(hand: &str) -> (HandType, String) {
 
         let hand_count = count_cards(hand);
         return match current_type {
-            HandType::FiveOfAKind => (HandType::FiveOfAKind, hand.to_owned()), // JJJJJ -> JJJJJ
-            HandType::FourOfAKind => {
-                let (high, low) = get_four_of_kind_cards(&hand_count).unwrap();
-
-                if high == 'J' {
-                    // JJJJ2 --> 22222
-
-                    let mut new_hand = hand.replace('J', low.to_string().as_str());
-                    return (HandType::FiveOfAKind, new_hand);
-                } else {
-                    // 2222J --> 2222
-                    let mut new_hand = hand.replace('J', high.to_string().as_str());
-                    return (HandType::FiveOfAKind, new_hand);
-                }
-            }
-            HandType::FullHouse => {
-                let (high, low) = get_full_house_cards(&hand_count).unwrap();
-
-                if high == 'J' {
-                    // JJJ22 --> 22222
-
-                    let mut new_hand = hand.replace('J', low.to_string().as_str());
-                    return (HandType::FiveOfAKind, new_hand);
-                } else {
-                    // 222JJ --> 2222
-                    let mut new_hand = hand.replace('J', high.to_string().as_str());
-                    return (HandType::FiveOfAKind, new_hand);
-                }
-            }
-            HandType::ThreeOfAKind => {
-                let high = get_three_of_kind_cards(&hand_count).unwrap();
-                if high == 'J' {
-                    // JJJ12 -> 22212 (we replace by 2 and not 1, as 2 is stronger)
-                    let other_cards: Vec<char> = _find_keys_for_value(&hand_count, 1);
-                    let sorted_cards: Vec<char> =
-                        sort_cards_from_strongest_to_weakest_part_2(other_cards);
-
-                    let strongest_card: &char = sorted_cards.iter().nth(0).unwrap();
-                    let new_hand: String = hand.replace('J', strongest_card.to_string().as_str());
-                    return (HandType::FourOfAKind, new_hand);
-                } else {
-                    // 222J1 --> 22221
-                    let new_hand: String = hand.replace('J', high.to_string().as_str());
-                    return (HandType::FourOfAKind, new_hand);
-                }
-            }
-
+            HandType::FiveOfAKind => HandType::FiveOfAKind, // JJJJJ -> JJJJJ
+            HandType::FourOfAKind => HandType::FiveOfAKind, // JJJJ2 --> 22222 or  2222J --> 2222
+            HandType::FullHouse => HandType::FiveOfAKind,   // JJJ22 --> 22222 or 222JJ --> 22222
+            HandType::ThreeOfAKind => HandType::FourOfAKind, // JJJ12 -> 22212 or 222J1 --> 22221
             HandType::DoublePair => {
                 let (high, low) = get_double_pair_cards(&hand_count).unwrap();
 
                 if high == 'J' {
                     // JJ228 --> 22228
-                    let new_hand = hand.replace('J', low.to_string().as_str());
-                    return (HandType::FourOfAKind, new_hand);
+                    return HandType::FourOfAKind;
                 } else if low == 'J' {
                     // KKJJ2 --> KKKK2
-                    let new_hand: String = hand.replace('J', high.to_string().as_str());
-                    return (HandType::FourOfAKind, new_hand);
+                    return HandType::FourOfAKind;
                 } else {
                     // 1122J --> 11222
-                    let other_cards: Vec<char> = _find_keys_for_value(&hand_count, 2);
-                    let sorted_cards: Vec<char> =
-                        sort_cards_from_strongest_to_weakest_part_2(other_cards);
-
-                    let strongest_card: &char = sorted_cards.iter().nth(0).unwrap();
-                    let new_hand: String = hand.replace('J', strongest_card.to_string().as_str());
-                    return (HandType::FullHouse, new_hand);
+                    return HandType::FullHouse;
                 }
             }
 
-            HandType::SinglePair => {
-                let pair = get_single_pair_cards(&hand_count).unwrap();
-
-                if pair == 'J' {
-                    // JJ123 --> JJJ23 (we replace the weakest)
-                    let other_cards: Vec<char> = _find_keys_for_value(&hand_count, 1);
-                    let sorted_cards: Vec<char> =
-                        sort_cards_from_strongest_to_weakest_part_2(other_cards);
-
-                    let weakest_card: &char = sorted_cards.iter().last().unwrap();
-                    let new_hand: String = hand.replace('J', weakest_card.to_string().as_str());
-                    return (HandType::ThreeOfAKind, new_hand);
-                } else {
-                    // KKJ12 --> KKK12
-                    let new_hand: String = hand.replace('J', pair.to_string().as_str());
-                    return (HandType::ThreeOfAKind, new_hand);
-                }
-            }
-            HandType::HighCard => {
-                // 1234J --> 12344
-                let sorted_cards: Vec<char> =
-                    sort_cards_from_strongest_to_weakest_part_2(hand.chars().collect());
-
-                let strongest_card: &char = sorted_cards.iter().nth(0).unwrap();
-                let new_hand: String = hand.replace('J', strongest_card.to_string().as_str());
-
-                return (HandType::SinglePair, new_hand);
-            }
+            HandType::SinglePair => HandType::ThreeOfAKind, // JJ123 --> JJJ23 (we replace the weakest) or KKJ12 --> KKK12 {
+            HandType::HighCard => HandType::SinglePair,     // 1234J --> 12344 ,
         };
     }
 }
@@ -382,13 +256,6 @@ fn _compare_card(card_1: char, card_2: char, strongest_to_weakest: [char; 13]) -
     }
 }
 
-fn sort_cards_from_strongest_to_weakest_part_2(chars: Vec<char>) -> Vec<char> {
-    let strongest_to_weakest: [char; 13] = [
-        'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
-    ];
-
-    return _sort_chars_from_strongest_to_weakest(chars, strongest_to_weakest);
-}
 
 fn _sort_chars_from_strongest_to_weakest(
     chars: Vec<char>,
@@ -437,7 +304,7 @@ fn get_five_of_kind_cards(hand: &HashMap<char, i8>) -> Option<char> {
     return None;
 }
 
-fn get_four_of_kind_cards(hand: &HashMap<char, i8>) -> Option<((char, char))> {
+fn get_four_of_kind_cards(hand: &HashMap<char, i8>) -> Option<(char, char)> {
     let mut highest_card: Option<char> = None;
     let mut lowest_card: Option<char> = None;
     for (card, count) in hand {
@@ -490,7 +357,7 @@ fn get_three_of_kind_cards(hand: &HashMap<char, i8>) -> Option<char> {
     return None;
 }
 
-fn get_double_pair_cards(hand: &HashMap<char, i8>) -> Option<((char, char))> {
+fn get_double_pair_cards(hand: &HashMap<char, i8>) -> Option<(char, char)> {
     let mut first_pair: Option<char> = None;
     let mut second_pair: Option<char> = None;
     for (card, count) in hand {
@@ -507,9 +374,8 @@ fn get_double_pair_cards(hand: &HashMap<char, i8>) -> Option<((char, char))> {
     return None;
 }
 
-fn get_single_pair_cards(hand: &HashMap<char, i8>) -> Option<(char)> {
+fn get_single_pair_cards(hand: &HashMap<char, i8>) -> Option<char> {
     let mut pair: Option<char> = None;
-    let mut other_pair: Option<char> = None;
     for (card, count) in hand {
         if *count == 2 && pair.is_none() {
             pair = Some(*card);
